@@ -22,7 +22,7 @@
         <Label Content="Columns to read" HorizontalAlignment="Left" Margin="52,116,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="TxtColToRead" TextChanged="ValColToRead" HorizontalAlignment="Left"  Margin="155,118,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="179" RenderTransformOrigin="0.083,0.169" Height="21"/>
         <Label Content="Slip Type" HorizontalAlignment="Left" Margin="92,89,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.995,0.849"/>
-        <ComboBox HorizontalAlignment="Left" Margin="339,118,0,0" VerticalAlignment="Top" Width="71" SelectedIndex="0" Height="21">
+        <ComboBox x:Name="ColToReadCB" HorizontalAlignment="Left" Margin="339,118,0,0" VerticalAlignment="Top" Width="71" SelectedIndex="0" Height="21" IsEnabled="False">
             <ComboBoxItem Content="Exclude"/>
             <ComboBoxItem Content="Include"/>
         </ComboBox>

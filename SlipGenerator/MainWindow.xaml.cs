@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Enumeration;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -108,7 +109,7 @@ namespace SlipGenerator
 
         private void ValColToRead(object sender, RoutedEventArgs e)
         {
-            var subStr = TxtColToRead.Text.Replace(" ", "").Split(",");
+            var subStr = TxtColToRead.Text.ToLower().Replace(" ", "").Split(",");
             foreach (var str in subStr)
             {
                 if (Regex.Matches(str, "[^A-Za-z]").Count > 0 || str.Length > 1)
@@ -136,23 +137,26 @@ namespace SlipGenerator
 
         private void BtnGenSlip_Click(object sender, RoutedEventArgs e)
         {
-            var arr = _settings.Adr.Split(',').ToList();
-            if (arr.Count == 0)
+            if (TxtAdr.Text.Length > 0)
             {
-                _settings.Adr = TxtAdr.Text;
-                _settings.Save();
-                return;
-            }
+                var arr = _settings.Adr.Split(',').ToList();
+                if (arr.Count == 0)
+                {
+                    _settings.Adr = TxtAdr.Text;
+                    _settings.Save();
+                    return;
+                }
 
-            arr.Add(TxtAdr.Text);
-            var value = string.Join(",", arr?.Select(i => i.ToString()).ToArray());
-            _settings.Adr = value;
-            _settings.Save();
+                arr.Add(TxtAdr.Text);
+                var value = string.Join(",", arr?.Select(i => i.ToString()).ToArray());
+                _settings.Adr = value;
+                _settings.Save();
+            }
 
             var workbook = new Workbook();
             workbook.LoadFromFile(TxtOpenExl.Text);
-            var sheet = workbook.Worksheets[0];
-            if (sheet == null)
+            var sheets = workbook.Worksheets;
+            if (sheets == null)
             {
                 ResultLabel.Content = "Invalid excel file.";
                 ResultLabel.Foreground = new SolidColorBrush(Colors.Red);
@@ -160,43 +164,144 @@ namespace SlipGenerator
             }
 
             ResultLabel.Content = "";
-            for (var i = 1; i < sheet.Rows.Length; i++)
+
+            var colToRead = TxtColToRead.Text.Split(',').ToList();
+            var isExclude = ColToReadCB.SelectedIndex == 0;
+
+            for (var k = 0; k < sheets.Count; k++)
             {
-           
-                try
+                var sheet = sheets[k];
+                for (var i = 1; i < sheet.Rows.Length; i++)
                 {
                     //SlipType is A or Both.
                     if (SlipTypeCb.SelectedIndex == 0 || SlipTypeCb.SelectedIndex == 2)
                     {
                         var pdfDoc = PdfReader.Open(_pdfDir + "\\SlipTypeA.pdf");
+                        var providerName = pdfDoc.AcroForm.Fields["PROVIDER NAME"];
+                        var streetPoBox = pdfDoc.AcroForm.Fields["Street and Apt No or PO Box No"];
+                        var cityStateZip = pdfDoc.AcroForm.Fields["City State ZIP4"];
+                        var recipientName = pdfDoc.AcroForm.Fields["RECIPIENT"];
+                        var insuranceName = pdfDoc.AcroForm.Fields["INSURANCE NAME"];
+                        var patient1 = pdfDoc.AcroForm.Fields["PATIENT_1"];
+                        var patient2 = pdfDoc.AcroForm.Fields["PATIENT_2"];
+                        var patient3 = pdfDoc.AcroForm.Fields["PATIENT_3"];
+                        var patient4 = pdfDoc.AcroForm.Fields["PATIENT_4"];
+                        var patient5 = pdfDoc.AcroForm.Fields["PATIENT_5"];
+                        var patient6 = pdfDoc.AcroForm.Fields["PATIENT_6"];
+                        var patient7 = pdfDoc.AcroForm.Fields["PATIENT_7"];
+                        var patient8 = pdfDoc.AcroForm.Fields["PATIENT_8"];
+                        var patient9 = pdfDoc.AcroForm.Fields["PATIENT_9"];
+                        var patient10 = pdfDoc.AcroForm.Fields["PATIENT_10"];
+                        for (var j = 0; j < sheet.Rows[i].Columns.Length; j++)
+                        {
+                            var adr = sheet.Rows[i].Columns[j].RangeAddressLocal[0].ToString().ToLower();
+                            var row = sheet.Rows[i].Columns[j].Text;
+                            if (!colToRead.Contains(adr))
+                            {
+                                switch (sheet.Rows[0].Columns[j].Text)
+                                {
+                                    case "INSURANCE":
+                                        insuranceName.Value = new PdfString(row);
+                                        break;
+                                    case "RECIPIENT":
+                                        recipientName.Value = new PdfString(row);
+                                        break;
+                                    case "STREET / P O Box":
+                                        streetPoBox.Value = new PdfString(row);
+                                        break;
+                                    case "CITY_STATE_ZIP":
+                                        cityStateZip.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-1":
+                                        patient1.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-2":
+                                        patient2.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-3":
+                                        patient3.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-4":
+                                        patient4.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-5":
+                                        patient5.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-6":
+                                        patient6.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-7":
+                                        patient7.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-8":
+                                        patient8.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-9":
+                                        patient9.Value = new PdfString(row);
+                                        break;
+                                    case "Patient-10":
+                                        patient10.Value = new PdfString(row);
+                                        break;
+                                }
+                            }
+                        }
 
+                        pdfDoc.Save(TxtOpenExp.Text.Replace("select.this.directory.this.directory", "") + "SlipTypeA" +
+                                    k + i + ".pdf");
                     }
 
                     //SlipType is B or Both.
                     if (SlipTypeCb.SelectedIndex == 1 || SlipTypeCb.SelectedIndex == 2)
                     {
                         var pdfDoc = PdfReader.Open(_pdfDir + "\\SlipTypeB.pdf");
-                        var providerName = pdfDoc.AcroForm.Fields["PROVIDER NAME"];
-                        var streetPoBox = pdfDoc.AcroForm.Fields["STREET / PO BOX"];
-                        var cityStateZip = pdfDoc.AcroForm.Fields["CITY / STATE / ZIP"];
-                        var recipientName = pdfDoc.AcroForm.Fields["RECIPIENT NAME"];
-                        var insuranceName = pdfDoc.AcroForm.Fields["INSURANCE NAME"];
-                        for(var j = 0; i < sheet.Rows[i].Columns.Length; j++)
+                        var providerName = pdfDoc.AcroForm.Fields[0];
+                        var streetPoBox = pdfDoc.AcroForm.Fields[1];
+                        var cityStateZip = pdfDoc.AcroForm.Fields[2];
+                        var recipientName = pdfDoc.AcroForm.Fields[3];
+                        var insuranceName = pdfDoc.AcroForm.Fields[4];
+                        for (var j = 0; j < sheet.Rows[i].Columns.Length; j++)
                         {
+                            var adr = sheet.Rows[i]?.Columns[j]?.RangeAddressLocal[0].ToString().ToLower();
                             var row = sheet.Rows[i].Columns[j].Text;
-                            
+                            if (!colToRead.Contains(adr))
+                            {
+                                switch (sheet.Rows[0].Columns[j].Text)
+                                {
+                                    case "INSURANCE":
+                                        insuranceName.Value = new PdfString(row);
+                                        break;
+                                    case "RECIPIENT":
+                                        recipientName.Value = new PdfString(row);
+                                        break;
+                                    case "STREET / P O Box":
+                                        streetPoBox.Value = new PdfString(row);
+                                        break;
+                                    case "CITY_STATE_ZIP":
+                                        cityStateZip.Value = new PdfString(row);
+                                        break;
+                                }
+                            }
                         }
-                        // PdfString caseNamePdfStr = new PdfString("12345");
-                        // currentField.Value = caseNamePdfStr;
-                        pdfDoc.Save(TxtOpenExp.Text.Replace("select.this.directory.this.directory", "") + i + ".pdf");
+
+                        try
+                        {
+                            providerName.Value = new PdfString("Jhonny  Wellness Center");
+                            using (XGraphics gfx = XGraphics.FromPdfPage(pdfDoc.Pages[0]))
+                            {
+                                gfx.DrawRectangle(XBrushes.Black, new XRect(0, 0, 1, 1));
+                            }
+                            pdfDoc.Save(TxtOpenExp.Text.Replace("select.this.directory.this.directory", "") +
+                                        "SlipTypeB" +
+                                        k + i + ".pdf");
+                        }
+                        catch (Exception exception)
+                        {
+                            ResultLabel.Content = "Failed to generate.";
+                            ResultLabel.Foreground = new SolidColorBrush(Colors.Red);
+                            MessageBox.Show("Failed to generate slips. " + exception);
+                            return;
+                        }
                     }
-                }
-                catch (Exception exception)
-                {
-                    ResultLabel.Content = "Failed to generate.";
-                    ResultLabel.Foreground = new SolidColorBrush(Colors.Red);
-                    MessageBox.Show("Failed to generate slips. " + exception);
-                    return;
                 }
             }
         }

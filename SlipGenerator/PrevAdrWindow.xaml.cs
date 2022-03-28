@@ -23,6 +23,7 @@ namespace SlipGenerator
 
         public PrevAdrWindow()
         {
+            
             InitializeComponent();
             var arr = _settings.Adr.Split(',').ToList();
             if (arr.Count > 1)
